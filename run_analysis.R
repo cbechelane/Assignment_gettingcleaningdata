@@ -1,3 +1,4 @@
+################################################################################
 #
 # This script:
 
@@ -9,9 +10,18 @@
 # 5. From the data set in step 4, creates a second, independent tidy data set
 #    with the average of each variable for each activity and each subject.
 
+################################################################################
+
+
+# sets the work directory as the same directory of this script
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# install required additional package
 install.packages("data.table")
 library(data.table)
+
+# Note: the original data was downloaded to the same directory as this script,
+# and unzipped to the directory "UCI HAR Dataset"
 
 # reads test set and training set
 testset <- fread("UCI HAR Dataset\\test\\X_test.txt")
@@ -21,7 +31,7 @@ trainingset <- fread("UCI HAR Dataset\\train\\X_train.txt")
 testlabels <- fread("UCI HAR Dataset\\test\\y_test.txt")
 traininglabels <- fread("UCI HAR Dataset\\train\\y_train.txt")
 
-# reads the test and training subjects
+# reads test and training subjects
 testsubj <- fread("UCI HAR Dataset\\test\\subject_test.txt")
 trainingsubj <- fread("UCI HAR Dataset\\train\\subject_train.txt")
 
@@ -30,15 +40,14 @@ trainingsubj <- fread("UCI HAR Dataset\\train\\subject_train.txt")
 
 # 1. Merges the training and the test sets to create one data set
 
-# put all test and training sets into one object 
+# puts all test and training sets into one object 
 allsets <- rbind(testset, trainingset)
-# Correct the name of each column (the measurements) using the features list
 
-# put all test and training labels into one object
+# puts all test and training labels into one object
 alllabels <- rbind(testlabels, traininglabels)
 setnames(alllabels, "V1", "activity_id")
 
-# put all test and training subjects into one object
+# puts all test and training subjects into one object
 allsubjects <- rbind(testsubj, trainingsubj)
 setnames(allsubjects, "V1", "subject")
 
@@ -51,16 +60,16 @@ mergeddata <- cbind(alllabels, allsubjects, allsets)
 # 2. Extracts only the measurements on the mean and standard deviation for each
 #    measurement. 
 
-# features that were measured are in the file features.txt
+# reads the features that were measured are in the metadata file features.txt
 featureslist <- fread("UCI HAR Dataset\\features.txt")
 
-# mean and standard deviation are the features that contain either "mean" or
-# "std" in the column name, as per the file "features_info.txt"
-# Therefore, we subset the features list for the desired features mean and std:
+# mean and standard deviation are the features that contain either "mean()" or
+# "std()" in the name, as per the file "features_info.txt".
+# Therefore, we subset the features list for these desired features
 featureslist <- featureslist[grepl("mean\\(\\)|std\\(\\)", V2)]
 
 # as the first 2 columns of the merged data correspond to the subject and
-# activity ids, respectively, those have to remain in the final data. Therefore
+# activity ids, respectively, those have to remain in the merged data. Therefore
 # the features list is manipulated to reflect this:
 
 # adds +2 to the ids of the features list
@@ -74,24 +83,22 @@ featureslist <- rbind(data.table(V1=1:2, V2 = c("activity_id", "subject")),
 
 # subsets the columns of the merged data with only the desired measurements
 # (mean and std), subject and activity label
-tidydata <- mergeddata[, featureslist$V1, with = FALSE]
-
+mergeddata <- mergeddata[, featureslist$V1, with = FALSE]
 
 
 ################################################################################
 
 # 3. Uses descriptive activity names to name the activities in the data set
 
-# the names of the activities are in the file activity_labels.txt
+# the names of the activities are in the metadata file activity_labels.txt
 activitylabels <- fread("UCI HAR Dataset\\activity_labels.txt")
 colnames(activitylabels) <- c("activity_id", "activity_label")
 
-# merge activitylabels with the dataset, first by setting the appropriate keys
+# merges activitylabels with the dataset, first by setting the appropriate keys
 # in order to merge
 setkey(activitylabels, activity_id)
-setkey(tidydata, activity_id)
-tidydata <- merge(tidydata, activitylabels)
-
+setkey(mergeddata, activity_id)
+mergeddata <- merge(mergeddata, activitylabels)
 
 
 ################################################################################
@@ -107,9 +114,28 @@ featureslist <- rbind(featureslist,
                       use.names=FALSE)
 
 # attributes the appropriate name to the data
-colnames(tidydata) <- featureslist$V2
+colnames(mergeddata) <- featureslist$V2
 
+# To make the column names even more readable, we do the following substitutions
+#
+# Acc -> Accelerometer
+# Gyro -> Gyroscope
+#  f -> Frequency
+#  t -> Time
+# BodyBody -> Body
+# Mag -> Magnitude
+#  () -> "empty string"
 
+names(mergeddata)<-gsub("Acc", "Accelerometer", names(mergeddata))
+names(mergeddata)<-gsub("Gyro", "Gyroscope", names(mergeddata))
+names(mergeddata)<-gsub("^t", "Time", names(mergeddata))
+names(mergeddata)<-gsub("^f", "Frequency", names(mergeddata))
+names(mergeddata)<-gsub("BodyBody", "Body", names(mergeddata))
+names(mergeddata)<-gsub("Mag", "Magnitude", names(mergeddata))
+names(mergeddata)<-gsub("\\(\\)", "", names(mergeddata))
+
+# removes column "activity_id"
+mergeddata[, activity_id:=NULL]
 
 
 ################################################################################
@@ -117,5 +143,12 @@ colnames(tidydata) <- featureslist$V2
 # 5. From the data set in step 4, creates a second, independent tidy data set
 #    with the average of each variable for each activity and each subject.
 
-tidydata2
+# set subject as a factor
+mergeddata$subject <- as.factor(mergeddata$subject)
+
+# we create tidydata, which aggregates the data by subject and activity
+tidydata <- aggregate(. ~subject + activity_label, mergeddata, mean)
+tidydata <- tidydata[order(tidydata$subject, tidydata$activity_label),]
+write.table(tidydata, file = "tidydata.txt", row.names = FALSE)
+
 
