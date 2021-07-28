@@ -106,7 +106,7 @@ mergeddata <- merge(mergeddata, activitylabels)
 # 4. Appropriately labels the data set with descriptive variable names. 
 
 # the column "V2" of featureslist contains the appropriate name of the
-# variables. The previous step (the merge created an additional column called
+# variables. In the previous step, the merge created an additional column called
 # activity_label. Therefore, this is added to the end of featureslist
 
 featureslist <- rbind(featureslist,

@@ -188,16 +188,67 @@ pre code {
 <p>The project contains the following files:</p>
 <ul>
 <li><p><em>README.md</em>: this file, which explains the project goals and the analysis files</p></li>
+<li><p><em>README.html</em>: the HTML version of <em>README.md</em></p></li>
 <li><p><em>run_analysis.R</em>: the R script run on the data set</p></li>
 <li><p><em>tidydata.txt</em>: the tidy data obtained when running <em>run_analysis.R</em> on the original data</p></li>
 <li><p><em>CodeBook.md</em>: document containing information about each of the variables in the dataset <em>tidydata.txt</em></p></li>
+<li><p><em>CodeBook.html</em>: the HTML version of <em>CodeBook.md</em></p></li>
 </ul>
 </div>
 <div id="assumptions" class="section level2">
 <h2>Assumptions</h2>
 <ul>
-<li>the original data was downloaded to the same directory as the R script and unziped</li>
+<li>the original data was downloaded to the same directory as the R script and unziped.</li>
+<li>after this step, all the files are contained in the directory “UCI HAR Dataset”.</li>
+<li><em>run_analysis.R</em> is then run, and after that the file <em>tidydata.txt</em> is generated.</li>
 </ul>
+</div>
+<div id="script-steps" class="section level2">
+<h2>Script steps</h2>
+<ol start="0" style="list-style-type: decimal">
+<li>Environment preparation
+<ul>
+<li>The library “data.table” is loaded</li>
+<li>The test and training datasets, activity labels and subjects are read from the original data</li>
+</ul></li>
+<li>Merges the training and the test sets to create one data set
+<ul>
+<li>Firstly all the corresponding data from test and training are merged using rbind, creating allsets, alllabels and allsubject</li>
+<li>After this, these 3 objects are merged into one, called mergeddata, using cbind</li>
+</ul></li>
+<li>Extracts only the measurements on the mean and standard deviation for each measurement.
+<ul>
+<li>reads the features that were measured are in the metadata file features.txt</li>
+<li>mean and standard deviation are the features that contain either “mean()” or “std()” in the name, as per the file “features_info.txt”. Therefore, these are subseted</li>
+<li>adds the activity label id and subject id to the beginning of the features list before subsetting</li>
+</ul></li>
+<li>Uses descriptive activity names to name the activities in the data set
+<ul>
+<li>the names of the activities are in the metadata file activity_labels.txt</li>
+<li>the script merges activity labels with the dataset, first by setting the appropriate keys in order to merge</li>
+</ul></li>
+<li>Appropriately labels the data set with descriptive variable names.
+<ul>
+<li>To make the column names even more readable, we do the following substitutions
+<ul>
+<li>Acc -&gt; Accelerometer</li>
+<li>Gyro -&gt; Gyroscope</li>
+<li>f -&gt; Frequency</li>
+<li>t -&gt; Time</li>
+<li>BodyBody -&gt; Body</li>
+<li>Mag -&gt; Magnitude</li>
+<li>() -&gt; “empty string”</li>
+</ul></li>
+</ul></li>
+<li>From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+<ul>
+<li>Firstly, subject is set as a factor</li>
+<li>Then we aggregate the data by subject and activity</li>
+<li>The data is ordered by subject and activity, in this order</li>
+<li>Finally, the dataset is written in <em>tidydata.txt</em></li>
+</ul></li>
+</ol>
+<p>For more details on each step of the script, please refer to the comments in the script file.</p>
 </div>
 </div>
 
